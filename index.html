@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ChatXP — WhatsApp-style Demo (Full)</title>
+<style>
+  :root{
+    --bg:#0b141a;
+    --panel:#0f1a20;
+    --muted:#9aa3a8;
+    --accent:#075e54;
+    --green:#25d366;
+    --white:#ffffff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family: "Segoe UI", Roboto, Arial, sans-serif;background:var(--bg);color:var(--white);-webkit-font-smoothing:antialiased}
+  .centerCol{display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .page{display:none;min-height:100vh;padding:20px}
+  .show{display:block}
+  input, select{font-size:16px;padding:12px;border-radius:10px;border:none;outline:none}
+  .phoneRow{display:flex;gap:10px;width:100%;max-width:420px;margin-top:14px}
+  .country{width:110px;background:#071114;color:#ddd;border-radius:10px;border:1px solid #122025;padding:12px}
+  .phoneInput{flex:1;background:#081317;color:var(--white);border-radius:10px;padding:12px;border:1px solid #122025}
+  .btn{width:100%;max-width:420px;background:var(--green);color:#05241d;padding:12px;border-radius:12px;border:none;font-weight:700;cursor:pointer;margin-top:14px}
+  .btn.secondary{background:transparent;border:1px solid #25302f;color:var(--green)}
+  .muted{color:var(--muted);font-size:14px}
+
+  /* HOME UI */
+  .topbar{height:60px;display:flex;align-items:center;padding:10px 16px;background:linear-gradient(180deg,var(--accent),#05624f);position:relative}
+  .topbar .title{font-weight:700;font-size:20px;color:var(--white);text-align:center;width:100%}
+  .topbar .iconLeft{position:absolute;left:14px;font-size:20px;cursor:pointer}
+  .topbar .iconRight{position:absolute;right:14px;font-size:20px;cursor:pointer}
+  .searchRow{padding:12px 16px;background:var(--bg);border-bottom:1px solid #0e1518}
+  .searchBox{display:flex;align-items:center;gap:10px;background:#0e171b;padding:10px;border-radius:10px;max-width:720px;margin:0 auto}
+  .statusRow{display:flex;gap:16px;padding:12px 16px;overflow-x:auto;align-items:center;border-bottom:1px solid #0e1518}
+  .statusItem{display:flex;flex-direction:column;align-items:center;min-width:64px;text-align:center;color:var(--muted);font-size:12px}
+  .ring{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#141a1c;box-shadow:0 0 0 3px rgba(37,211,102,0.12) inset}
+  .avatarSmall{width:48px;height:48px;border-radius:50%;background:#333;object-fit:cover}
+
+  .chatList{height:calc(100vh - 60px - 56px - 108px);overflow-y:auto;padding:12px 8px 120px}
+  .chatItem{display:flex;gap:12px;padding:12px 14px;align-items:center;border-bottom:1px solid #0e1518;cursor:pointer;background:transparent}
+  .chatAvatar{width:56px;height:56px;border-radius:50%;background:#2b3436;flex-shrink:0;position:relative;object-fit:cover}
+  .chatBody{flex:1;overflow:hidden}
+  .chatName{font-weight:700;color:#fff;font-size:16px}
+  .chatTime{font-size:12px;color:var(--muted);white-space:nowrap}
+  .chatMsg{font-size:13px;color:var(--muted);margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .unreadBadge{min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--green);color:#05241d;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;margin-left:8px}
+
+  .bottomNav{position:fixed;left:0;right:0;bottom:0;height:64px;background:var(--panel);border-top:1px solid #0e1518;display:flex;align-items:center;justify-content:space-around}
+  .tab{color:var(--muted);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .tab.active{color:#fff}
+
+  .centerBox{width:100%;max-width:420px;margin:0 auto;text-align:center}
+  .small{font-size:13px;color:var(--muted)}
+
+  /* header helpers */
+  .headerControls{position:absolute;right:60px;top:12px}
+  .clearBtn{position:absolute;right:100px;top:12px;background:transparent;border:1px solid rgba(255,255,255,0.12);padding:6px 8px;border-radius:8px;color:#fff;cursor:pointer}
+
+  @media (max-width:420px){
+    .chatAvatar{width:52px;height:52px}
+    .ring{width:52px;height:52px}
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<section id="loginPage" class="page centerCol show">
+  <div style="width:100%;max-width:420px;">
+    <h2 style="margin:0">Enter your phone number</h2>
+    <p class="muted">ChatXP will need to verify your phone number. Carrier charges may apply.</p>
+
+    <div class="phoneRow">
+      <select id="countrySelect" class="country">
+        <option value="+91">India (+91)</option>
+        <option value="+1">USA (+1)</option>
+        <option value="+44">UK (+44)</option>
+      </select>
+      <input id="phoneNum" class="phoneInput" type="text" inputmode="numeric" placeholder="Phone number (no leading 0)" />
+    </div>
+
+    <div style="height:12px"></div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button id="nextBtn" class="btn">Next</button>
+    </div>
+
+    <p class="small" style="margin-top:12px;text-align:center;color:var(--muted)">If you want, you can later change profile pictures for each contact by tapping its avatar.</p>
+  </div>
+</section>
+
+<!-- PASSWORD PAGE -->
+<section id="passwordPage" class="page centerCol" aria-hidden="true">
+  <div style="width:100%;max-width:420px;">
+    <h2 style="margin:0">Enter Password</h2>
+    <p class="muted">Type your WhatsApp security password.</p>
+
+    <input id="passInput" type="password" placeholder="Password " />
+    <button id="verifyBtn" class="btn">Verify</button>
+    <div style="height:8px"></div>
+    <button id="backBtn" class="btn" style="background:#0f2f24">Back</button>
+  </div>
+</section>
+
+<!-- HOME PAGE -->
+<section id="homePage" class="page" aria-hidden="true">
+  <div class="topbar">
+    <div class="iconLeft" title="Camera" id="cameraBtn"></div>
+    <div class="title">WhatsApp</div>
+    <div class="headerControls">
+      <button id="clearDataBtn" class="clearBtn" title="Clear saved data"></button>
+    </div>
+    <div class="iconRight" title="Menu" id="menuBtn">⋮</div>
+  </div>
+
+  <div class="searchRow">
+    <div class="searchBox centerBox" style="display:flex;align-items:center;gap:10px">
+      <div style="opacity:0.8">🔎</div>
+      <input placeholder="Search or ask" style="flex:1;background:transparent;border:none;color:#d7dfdf;font-size:15px;outline:none">
+      <div style="opacity:.7;font-size:13px">Ctrl+K</div>
+    </div>
+  </div>
+
+  <div class="statusRow" id="statusRow" aria-hidden="false">
+    <!-- status circles injected -->
+  </div>
+
+  <div class="chatList" id="chatList" role="list">
+    <!-- chat items injected -->
+  </div>
+
+  <div class="bottomNav" role="navigation" aria-hidden="false">
+    <div class="tab active"><div>💬</div><div>Chats</div></div>
+    <div class="tab"><div>📰</div><div>Updates</div></div>
+    <div class="tab"><div>👥</div><div>Communities</div></div>
+    <div class="tab"><div>📞</div><div>Calls</div></div>
+  </div>
+</section>
+
+<script>
+/*
+ Full working file:
+ - Next -> shows password page
+ - Verify -> validates demo password and shows home
+ - DP click on contact -> upload image and save to localStorage
+ - DP click on status -> upload image and save to localStorage (FIXED)
+ - Auto-logout after midnight (stores login timestamp date)
+ - Reset button clears saved DPs and login
+*/
+
+/* ---------- Data (you can change these names) ---------- */
+const CONTACTS = [
+  "Ashish",
+  "Sonu ff",
+  "Rani svli",
+  "Puhuhsj",
+  "Bgsjnk",
+  "Scgopl 2 hrop",
+  "Group 2bakva.",
+  "HTfvs kgsvu",
+  "Ok..",
+  "Mummy ❤️"
+];
+
+const STATUS = ["You","Nitin","Mummy","Brijesh","Chal Nikal","Amazon"];
+const DEMO_PASS = "Meta code"; // demo password
+
+/* ---------- Helpers ---------- */
+function el(id){return document.getElementById(id);}
+
+/* ---------- Auto-logout logic ---------- */
+(function(){
+  const saved = localStorage.getItem('chatxp_login_ts');
+  if(saved){
+    const last = new Date(parseInt(saved));
+    const now = new Date();
+    // if login date != today date, force logout by removing key
+    if(last.getFullYear() !== now.getFullYear() || last.getMonth() !== now.getMonth() || last.getDate() !== now.getDate()){
+      localStorage.removeItem('chatxp_login_ts');
+    }
+  }
+})();
+
+/* ---------- Show / Hide pages ---------- */
+function showPage(id){
+  ['loginPage','passwordPage','homePage'].forEach(p=> el(p).classList.remove('show'));
+  el(id).classList.add('show');
+  // accessibility attributes
+  el('loginPage').ariaHidden = (id !== 'loginPage');
+  el('passwordPage').ariaHidden = (id !== 'passwordPage');
+  el('homePage').ariaHidden = (id !== 'homePage');
+}
+
+/* ---------- Next (phone validation) ---------- */
+function goNext(){
+  const phone = el('phoneNum').value.trim();
+  if(!/^\d{10}$/.test(phone)){
+    alert('Enter a valid 10-digit phone number.');
+    return;
+  }
+  showPage('passwordPage');
+}
+
+/* ---------- Verify password and login ---------- */
+function doVerify(){
+  const pass = el('passInput').value;
+  if(pass !== DEMO_PASS){
+    alert('Wrong password!');
+    return;
+  }
+  // save login timestamp
+  localStorage.setItem('chatxp_login_ts', Date.now().toString());
+  showPage('homePage');
+  renderStatuses();
+  renderContacts();
+}
+
+/* ---------- Render statuses (top row) with clickable DP (FIXED) ---------- */
+function renderStatuses(){
+  const row = el('statusRow');
+  row.innerHTML = '';
+  STATUS.forEach((s, i)=>{
+    // use numeric index for keys/ids to avoid issues with spaces/symbols
+    const key = 'status_' + i;
+    const imgSrc = getSavedAvatar(key) || defaultAvatarData();
+    const div = document.createElement('div');
+    div.className = 'statusItem';
+    // create content with id that includes index
+    div.innerHTML = `
+      <div class="ring">
+        <img class="avatarSmall" id="status_${i}" src="${imgSrc}" style="cursor:pointer" />
+      </div>
+      <div style="margin-top:6px;color:var(--muted);font-size:12px">${s}</div>
+    `;
+    row.appendChild(div);
+
+    // add click handler AFTER element is in DOM
+    const imgEl = div.querySelector('#status_' + i);
+    if(imgEl){
+      imgEl.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        setStatusDP(i); // open file picker and save for this status
+      });
+    }
+  });
+}
+
+/* ---------- Render contacts list ---------- */
+function renderContacts(){
+  const list = el('chatList');
+  list.innerHTML = '';
+  CONTACTS.forEach((name, idx) => {
+    const avatarKey = 'chatxp_avatar_'+idx;
+    const avatar = getSavedAvatar(avatarKey);
+    const item = document.createElement('div');
+    item.className = 'chatItem';
+    item.innerHTML = `
+      <img class="chatAvatar" id="avatar_${idx}" src="${avatar || defaultAvatarData()}" alt="avatar" />
+      <div class="chatBody">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div style="min-width:0"><div class="chatName">${name}</div></div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="chatTime">11:2${idx}</div>
+            ${ (idx%3===0) ? '<div class="unreadBadge">2</div>' : '' }
+          </div>
+        </div>
+        <div class="chatMsg">Tap to chat…</div>
+      </div>
+    `;
+    // click on avatar allows setting DP
+    const avatarEl = item.querySelector('#avatar_'+idx);
+    if(avatarEl){
+      avatarEl.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        setContactDP(idx);
+      });
+    }
+    // click on item opens demo alert (or could open chat)
+    item.addEventListener('click', ()=> alert('Demo: Chat open not implemented for '+name));
+    list.appendChild(item);
+  });
+}
+
+/* ---------- Avatar helpers (localStorage) ---------- */
+function getSavedAvatar(key){
+  try{
+    return localStorage.getItem(key);
+  }catch(e){ return null; }
+}
+function saveAvatar(key,dataUrl){
+  try{
+    localStorage.setItem(key,dataUrl);
+  }catch(e){
+    console.warn('Could not save avatar', e);
+  }
+}
+
+/* ---------- Default avatar (simple SVG data URL) ---------- */
+function defaultAvatarData(){
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"><rect rx="28" ry="28" width="56" height="56" fill="#2b3436"/><text x="50%" y="55%" font-size="22" fill="#777" text-anchor="middle" font-family="Arial" dy=".35em">🙂</text></svg>');
+}
+
+/* ---------- Set contact DP (open file picker and save) ---------- */
+function setContactDP(index){
+  const key = 'chatxp_avatar_'+index;
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = (ev)=>{
+    const file = ev.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e){
+      const dataUrl = e.target.result;
+      saveAvatar(key,dataUrl);
+      // update UI immediately
+      const img = document.getElementById('avatar_'+index);
+      if(img) img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+/* ---------- Set status DP (open file picker and save) ---------- */
+function setStatusDP(index){
+  const key = 'status_' + index;
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = (ev)=>{
+    const file = ev.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e){
+      const dataUrl = e.target.result;
+      saveAvatar(key,dataUrl);
+      // update UI immediately: find the status image element and set src
+      const img = document.getElementById('status_' + index);
+      if(img) img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+/* ---------- Clear saved data (avatars + login) ---------- */
+function clearSavedData(){
+  if(!confirm('Clear saved profile pictures and session?')) return;
+  // remove saved avatars
+  CONTACTS.forEach((_,i)=> localStorage.removeItem('chatxp_avatar_'+i));
+  // remove statuses by index keys
+  for(let i=0;i<STATUS.length;i++){
+    localStorage.removeItem('status_'+i);
+  }
+  localStorage.removeItem('chatxp_login_ts');
+  // reload UI
+  renderContacts();
+  renderStatuses();
+  alert('Cleared. You will need to login again.');
+  showPage('loginPage');
+}
+
+/* ---------- Attach UI events ---------- */
+document.addEventListener('DOMContentLoaded', ()=>{
+  // attach next / verify
+  el('nextBtn').addEventListener('click', goNext);
+  el('verifyBtn').addEventListener('click', doVerify);
+  el('backBtn').addEventListener('click', ()=> showPage('loginPage'));
+  el('clearDataBtn').addEventListener('click', clearSavedData);
+
+  // if already logged in today, go to home directly
+  if(localStorage.getItem('chatxp_login_ts')){
+    showPage('homePage');
+    renderStatuses();
+    renderContacts();
+  } else {
+    showPage('loginPage');
+  }
+});
+
+/* ---------- Midnight auto-logout (optional extra check while page open) ---------- */
+(function startMidnightWatcher(){
+  function checkMidnight(){
+    const saved = localStorage.getItem('chatxp_login_ts');
+    if(!saved) return;
+    const last = new Date(parseInt(saved));
+    const now = new Date();
+    if(last.getFullYear() !== now.getFullYear() || last.getMonth() !== now.getMonth() || last.getDate() !== now.getDate()){
+      // expired
+      localStorage.removeItem('chatxp_login_ts');
+      alert('Session expired (new day). Please login again.');
+      showPage('loginPage');
+    }
+  }
+  // check every 30s
+  setInterval(checkMidnight, 30000);
+})();
+</script>
+</body>
+  </html>
